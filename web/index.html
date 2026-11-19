@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Sorter &amp; Searcher</title>
+<style>
+:root{color-scheme:light;--bg:#f2f4f7;--card:#fff;--text:#202735;--muted:#596579;--line:#d8dee8;--accent:#3156bd;--accent-t:#fff;--ok:#24733b;--err:#b42318;--focus:#91aaf5}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#151a23;--card:#1e2632;--text:#edf1f7;--muted:#b2bdcd;--line:#364253;--accent:#91a9ff;--accent-t:#17213a;--ok:#81d99a;--err:#ff928a;--focus:#a9bbff}}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:1160px;margin:0 auto;padding:32px 24px 48px}
+h1{margin:0 0 6px;font-size:clamp(1.8rem,3vw,2.35rem);line-height:1.15;letter-spacing:-.035em}
+.sub{max-width:68ch;color:var(--muted);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media (max-width:800px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+.card h2{margin:0 0 14px;font-size:1.12rem;letter-spacing:-.015em}
+label{display:block;font-size:.82rem;font-weight:600;color:var(--muted);margin:12px 0 5px}
+select,input{min-height:42px;width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--text);font:inherit;font-size:.94rem}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.row{display:flex;gap:12px}.row>div{flex:1;min-width:0}
+.btns{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}
+button{min-height:40px;padding:8px 14px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);font:inherit;font-size:.9rem;font-weight:600;cursor:pointer;transition:background-color .15s,border-color .15s,transform .15s}
+button:hover:not(:disabled){border-color:var(--accent);transform:translateY(-1px)}
+button.primary{background:var(--accent);color:var(--accent-t);border-color:var(--accent)}
+button.primary:hover:not(:disabled){filter:brightness(1.08)}
+button:disabled{opacity:.55;cursor:wait}
+.status{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:7px;padding:6px 11px;font-size:.85rem;margin-bottom:16px;color:var(--muted)}
+.dataset-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.dataset-tabs button{min-width:140px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
+.dataset-tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-t)}
+.dataset-tabs button span{font-size:.78rem;font-weight:400;opacity:.85}
+.result{margin-top:16px;font-size:.9rem}
+.result .err{color:var(--err)}.result .ok{color:var(--ok)}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-size:.82rem;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--bg);color:var(--muted);font-weight:700;font-size:.8rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:color-mix(in srgb,var(--accent) 6%,var(--card))}
+.pager{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.pager[hidden]{display:none}
+.pager select{width:auto;min-width:76px}
+.note{font-size:.8rem;color:var(--muted);margin-top:8px}
+::selection{background:var(--accent);color:var(--accent-t)}
+@media (max-width:600px){.wrap{padding:24px 14px 32px}.card{padding:16px}.row{gap:8px}.pager{gap:6px}.pager button{padding-inline:10px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Game Sorter &amp; Searcher</h1>
+  <p class="sub">10.000 data game disimpan dalam array Java (tanpa database). Sorting dan searching dijalankan oleh server Java.</p>
+  <div class="status" id="status">Memuat…</div>
+
+  <div class="dataset-tabs" id="datasetTabs" role="group" aria-label="Pilih ukuran data">
+    <button type="button" data-size="100" aria-pressed="false"><strong>Data Kecil</strong><span>100 game</span></button>
+    <button type="button" data-size="1000" aria-pressed="false"><strong>Data Medium</strong><span>1.000 game</span></button>
+    <button type="button" data-size="10000" aria-pressed="true"><strong>Data Besar</strong><span>10.000 game</span></button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>Sorting</h2>
+      <label for="sAlgo">Algoritma</label>
+      <select id="sAlgo">
+        <option value="bubble">Bubble Sort</option>
+        <option value="selection">Selection Sort</option>
+        <option value="insertion">Insertion Sort</option>
+      </select>
+      <div class="row">
+        <div><label for="sField">Urutkan berdasarkan</label>
+          <select id="sField">
+            <option value="name">Nama Game</option>
+            <option value="genre">Genre</option>
+            <option value="platform">Platform</option>
+            <option value="year">Tahun Rilis</option>
+            <option value="no">No (urutan awal)</option>
+          </select></div>
+        <div><label for="sOrder">Arah</label>
+          <select id="sOrder"><option value="asc">Naik (A–Z / kecil–besar)</option><option value="desc">Turun (Z–A / besar–kecil)</option></select></div>
+      </div>
+      <div class="btns">
+        <button class="primary" id="btnSort">Urutkan</button>
+        <button id="btnReset">Reset ke urutan acak</button>
+      </div>
+      <div class="result" id="sortResult"></div>
+    </div>
+
+    <div class="card">
+      <h2>Pencarian</h2>
+      <label for="qAlgo">Algoritma</label>
+      <select id="qAlgo">
+        <option value="linear">Linear Search</option>
+        <option value="binary">Binary Search (data harus terurut)</option>
+      </select>
+      <div class="row">
+        <div><label for="qField">Cari di kolom</label>
+          <select id="qField">
+            <option value="name">Nama Game</option>
+            <option value="genre">Genre</option>
+            <option value="platform">Platform</option>
+            <option value="year">Tahun Rilis</option>
+            <option value="no">No</option>
+          </select></div>
+        <div><label for="qText">Kata kunci (sama persis)</label>
+          <input id="qText" placeholder="mis. Dark Kingdom"></div>
+      </div>
+      <div class="btns">
+        <button class="primary" id="btnSearch">Cari</button>
+        <button id="btnSample">Isi contoh dari data</button>
+      </div>
+      <div class="result" id="searchResult"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 id="tableTitle">Data (array saat ini)</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Posisi</th><th>No asal</th><th>Nama Game</th><th>Genre</th><th>Platform</th><th>Tahun</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager">
+      <button id="first">« Awal</button>
+      <button id="prev">‹ Sebelumnya</button>
+      <span id="pageInfo"></span>
+      <button id="next">Berikutnya ›</button>
+      <button id="last">Akhir »</button>
+      <select id="size"><option>50</option><option selected>100</option><option>250</option><option>500</option></select>
+      <span class="note">baris per halaman</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const LABEL = {name:'Nama Game',genre:'Genre',platform:'Platform',year:'Tahun Rilis',no:'No'};
+const ALGO = {bubble:'Bubble Sort',selection:'Selection Sort',insertion:'Insertion Sort',linear:'Linear Search',binary:'Binary Search'};
+let page = 1, pages = 1, searchItems = null, activeDataset = 10000;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = n => Number(n).toLocaleString('id-ID');
+
+async function call(url){
+  const r = await fetch(url);
+  const j = await r.json();
+  if(!r.ok) throw new Error(j.error || 'Terjadi kesalahan');
+  return j;
+}
+
+function showStatus(info){
+  $('status').textContent = info.sortedField
+    ? `${num(info.total)} data · terurut berdasarkan ${LABEL[info.sortedField]} (${info.sortedOrder === 'asc' ? 'naik' : 'turun'})`
+    : `${num(info.total)} data · belum terurut (urutan acak dari file)`;
+}
+
+async function refreshInfo(){ showStatus(await call('/api/info')); }
+
+function showRows(items){
+  $('rows').innerHTML = items.length ? items.map(g =>
+    `<tr><td>${num(g.pos)}</td><td>${g.no}</td><td>${esc(g.name)}</td><td>${esc(g.genre)}</td><td>${esc(g.platform)}</td><td>${g.year}</td></tr>`
+  ).join('') : '<tr><td colspan="6">Tidak ada data yang cocok.</td></tr>';
+}
+
+async function loadPage(){
+  const size = $('size').value;
+  if(searchItems){
+    pages = Math.max(1, Math.ceil(searchItems.length / size));
+    page = Math.min(page, pages);
+    showRows(searchItems.slice((page - 1) * size, page * size));
+    $('pageInfo').textContent = `Halaman ${num(page)} dari ${num(pages)}`;
+    $('first').disabled = $('prev').disabled = page <= 1;
+    $('next').disabled = $('last').disabled = page >= pages;
+    return;
+  }
+  const j = await call(`/api/games?page=${page}&size=${size}`);
+  page = j.page; pages = j.pages;
+  showRows(j.items);
+  $('pageInfo').textContent = `Halaman ${num(page)} dari ${num(pages)}`;
+  $('first').disabled = $('prev').disabled = page <= 1;
+  $('next').disabled = $('last').disabled = page >= pages;
+}
+
+$('datasetTabs').onclick = async e => {
+  const button = e.target.closest('button[data-size]');
+  if(!button || Number(button.dataset.size) === activeDataset) return;
+  const buttons = [...$('datasetTabs').querySelectorAll('button')];
+  buttons.forEach(b => b.disabled = true);
+  try{
+    const info = await call(`/api/dataset?size=${button.dataset.size}`);
+    activeDataset = Number(button.dataset.size);
+    buttons.forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+    searchItems = null; page = 1;
+    $('tableTitle').textContent = 'Data (array saat ini)';
+    $('pager').hidden = false;
+    $('sortResult').textContent = '';
+    $('searchResult').textContent = '';
+    showStatus(info);
+    await loadPage();
+  }catch(e){ $('searchResult').innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  buttons.forEach(b => b.disabled = false);
+};
+
+$('btnSort').onclick = async () => {
+  const btns = [$('btnSort'), $('btnReset')];
+  btns.forEach(b => b.disabled = true);
+  const started = performance.now();
+  $('sortResult').textContent = 'Memproses… 0,0 detik';
+  const timer = setInterval(() => {
+    $('sortResult').textContent = `Memproses… ${((performance.now() - started) / 1000).toFixed(1).replace('.', ',')} detik`;
+  }, 100);
+  try{
+    const j = await call(`/api/sort?algo=${$('sAlgo').value}&field=${$('sField').value}&order=${$('sOrder').value}`);
+    $('sortResult').innerHTML =
+      `<span class="ok">${ALGO[j.algo]} selesai</span> — ${num(j.n)} data, kolom ${LABEL[j.field]} (${j.order === 'asc' ? 'naik' : 'turun'})` +
+      `<div class="stats"><span class="chip">Waktu: ${j.timeMs} ms</span><span class="chip">Perbandingan: ${num(j.comparisons)}</span><span class="chip">Pertukaran/pergeseran: ${num(j.swaps)}</span></div>`;
+    searchItems = null; $('tableTitle').textContent = 'Data (array saat ini)'; $('pager').hidden = false; page = 1;
+    await refreshInfo(); await loadPage();
+  }catch(e){ $('sortResult').innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  finally{ clearInterval(timer); }
+  btns.forEach(b => b.disabled = false);
+};
+
+$('btnReset').onclick = async () => {
+  try{
+    showStatus(await call('/api/reset'));
+    $('sortResult').textContent = 'Array dikembalikan ke urutan awal dari file.';
+    searchItems = null; $('tableTitle').textContent = 'Data (array saat ini)'; $('pager').hidden = false; page = 1; await loadPage();
+  }catch(e){ $('sortResult').innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+};
+
+$('btnSearch').onclick = async () => {
+  const algo = $('qAlgo').value, field = $('qField').value, q = $('qText').value;
+  const started = performance.now();
+  $('searchResult').textContent = 'Mencari… 0,0 detik';
+  const timer = setInterval(() => {
+    $('searchResult').textContent = `Mencari… ${((performance.now() - started) / 1000).toFixed(1).replace('.', ',')} detik`;
+  }, 100);
+  try{
+    const j = await call(`/api/search?algo=${algo}&field=${field}&q=${encodeURIComponent(q)}`);
+    searchItems = j.items;
+    $('tableTitle').textContent = 'Hasil pencarian';
+    $('pager').hidden = false;
+    page = 1;
+    await loadPage();
+    let html = j.found
+      ? `<span class="ok">Ditemukan ${num(j.total)} data</span> dengan ${ALGO[j.algo]}`
+      : `<span class="err">Tidak ditemukan</span> dengan ${ALGO[j.algo]}`;
+    html += `<div class="stats"><span class="chip">Waktu: ${j.timeMs} ms</span><span class="chip">Perbandingan: ${num(j.comparisons)}</span></div>`;
+    html += '<div class="btns"><button id="showAllRows">Kembali ke seluruh data</button></div>';
+    $('searchResult').innerHTML = html;
+  }catch(e){ $('searchResult').innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  finally{ clearInterval(timer); }
+};
+
+$('searchResult').onclick = async e => {
+  if(e.target.id !== 'showAllRows') return;
+  searchItems = null; $('tableTitle').textContent = 'Data (array saat ini)'; $('pager').hidden = false; page = 1; await loadPage();
+};
+
+$('btnSample').onclick = async () => {
+  try{ $('qText').value = (await call(`/api/sample?field=${$('qField').value}`)).value; }catch(e){}
+};
+$('qText').addEventListener('keydown', e => { if(e.key === 'Enter') $('btnSearch').click(); });
+
+$('first').onclick = () => { page = 1; loadPage(); };
+$('prev').onclick  = () => { page--; loadPage(); };
+$('next').onclick  = () => { page++; loadPage(); };
+$('last').onclick  = () => { page = pages; loadPage(); };
+$('size').onchange = () => { page = 1; loadPage(); };
+
+refreshInfo().then(loadPage).catch(e => { $('status').textContent = 'Gagal memuat: ' + e.message; });
+</script>
+</body>
+</html>
