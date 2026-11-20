@@ -136,8 +136,10 @@ tbody tr:hover td{background:color-mix(in srgb,var(--accent) 6%,var(--card))}
   </div>
 </div>
 
+<script src="/config.js"></script>
 <script>
 const $ = id => document.getElementById(id);
+const API_BASE = window.API_BASE_URL || '';
 const LABEL = {name:'Nama Game',genre:'Genre',platform:'Platform',year:'Tahun Rilis',no:'No'};
 const ALGO = {bubble:'Bubble Sort',selection:'Selection Sort',insertion:'Insertion Sort',linear:'Linear Search',binary:'Binary Search'};
 let page = 1, pages = 1, searchItems = null, activeDataset = 10000;
@@ -146,7 +148,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const num = n => Number(n).toLocaleString('id-ID');
 
 async function call(url){
-  const r = await fetch(url);
+  const r = await fetch(API_BASE + url);
   const j = await r.json();
   if(!r.ok) throw new Error(j.error || 'Terjadi kesalahan');
   return j;

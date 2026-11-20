@@ -49,3 +49,16 @@ Kolom "Perbandingan" dan "Pertukaran/pergeseran" di halaman web dihitung langsun
     GET /api/sample?field=name      (nilai acak dari data, untuk contoh pencarian)
     GET /api/reset                  (kembali ke urutan awal)
     GET /api/info
+
+## Deploy (Vercel + backend Java)
+
+Vercel menyajikan halaman web dari folder `web`. Backend Java dijalankan sebagai Docker web service terpisah.
+
+1. Push proyek ini ke repository GitHub.
+2. Buat **Web Service** dari repository tersebut di Render, pilih runtime **Docker**, lalu deploy. Render akan memakai `Dockerfile` di root proyek.
+3. Setelah backend aktif, buka URL-nya dan pastikan `/api/info` menampilkan JSON.
+4. Masukkan URL backend ke `window.API_BASE_URL` di `web/config.js`, tanpa garis miring di akhir, lalu commit dan push perubahan.
+5. Import repository ke Vercel. Framework Preset pilih **Other**, Build Command kosong, Output Directory isi `web`, lalu deploy.
+6. Buka URL Vercel. Halaman web mengirim permintaan API ke backend yang URL-nya diisi pada langkah 4.
+
+`vercel.json` sudah mengatur Output Directory ke `web`. Backend mengizinkan CORS untuk frontend karena keduanya berjalan di domain berbeda.
