@@ -41,12 +41,11 @@ public class GameApp {
     }
 
     public static void main(String[] args) throws Exception {
-        int port = args.length > 0 ? Integer.parseInt(args[0])
-                : Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+        int port = args.length > 0 ? Integer.parseInt(args[0]) : 8080;
         original = loadCsv("data/games.csv");
         data = original.clone();
 
-        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", GameApp::serveIndex);
         server.createContext("/api/info",   ex -> api(ex, q -> info()));
         server.createContext("/api/games",  ex -> api(ex, GameApp::games));
@@ -251,7 +250,6 @@ public class GameApp {
     private static void send(HttpExchange ex, int code, String type, byte[] bytes) throws IOException {
         ex.getResponseHeaders().set("Content-Type", type);
         ex.getResponseHeaders().set("Cache-Control", "no-store");
-        ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         ex.sendResponseHeaders(code, bytes.length);
         try (OutputStream os = ex.getResponseBody()) {
             os.write(bytes);
